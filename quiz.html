@@ -72,7 +72,7 @@
 
     <section class="card">
       <h1>Bộ đề trắc nghiệm ôn tập</h1>
-      <p>ÔN TẬP KINH TẾ VI MÔ. Mỗi câu chỉ có <b>1 đáp án đúng</b>.</p>
+      <p>Trang này được làm theo bộ câu hỏi ôn tập kinh tế vi mô để nhiều người có thể vào làm bài trực tiếp trên web. Mỗi câu chỉ có <b>1 đáp án đúng</b>.</p>
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
         <span class="pill">Chọn 1 đáp án / câu</span>
         <span class="pill">Chấm điểm tự động</span>
@@ -87,6 +87,7 @@
         <button class="btn" id="resetBtn">Làm lại</button>
       </div>
       <div id="scoreBox" class="score note">Chưa chấm bài.</div>
+      <div id="extraStats" class="note" style="margin-top:8px">Đúng: 0 • Sai: 0 • Chưa làm: 50</div>
     </section>
 
     <section class="card">
@@ -404,7 +405,70 @@
       options: ['Sản lượng chắc chắn tăng', 'Giá chắc chắn tăng', 'Giá chắc chắn giảm', 'Sản lượng chắc chắn giảm'],
       correct: 0,
       explain: 'Cả cung và cầu tăng đều làm sản lượng cân bằng tăng; giá thì không chắc chắn.'
+    },
+
+    // ===== THÊM CÂU MỚI =====
+    {
+      question: '51. Khi cầu không co giãn, tăng giá sẽ làm doanh thu?',
+      options: ['Tăng', 'Giảm', 'Không đổi', 'Bằng 0'],
+      correct: 0,
+      explain: 'Cầu không co giãn → tăng giá làm TR tăng.'
+    },
+    {
+      question: '52. Tổng doanh thu (TR) được tính bằng?',
+      options: ['P × Q', 'P + Q', 'Q/P', 'MC × Q'],
+      correct: 0,
+      explain: 'TR = P × Q.'
+    },
+    {
+      question: '53. Tổng chi phí (TC) gồm?',
+      options: ['FC + VC', 'MC + AVC', 'TR - π', 'Chỉ VC'],
+      correct: 0,
+      explain: 'TC = FC + VC.'
+    },
+    {
+      question: '54. Chi phí cố định (FC) là?',
+      options: ['Không đổi theo sản lượng', 'Tăng theo Q', 'Giảm theo Q', 'Bằng 0'],
+      correct: 0,
+      explain: 'FC không phụ thuộc sản lượng.'
+    },
+    {
+      question: '55. Chi phí biến đổi (VC) là?',
+      options: ['Không đổi', 'Phụ thuộc sản lượng', 'Luôn bằng 0', 'Không xác định'],
+      correct: 1,
+      explain: 'VC thay đổi theo sản lượng.'
+    },
+    {
+      question: '56. AVC được tính bằng?',
+      options: ['VC/Q', 'TC/Q', 'FC/Q', 'MC/Q'],
+      correct: 0,
+      explain: 'AVC = VC/Q.'
+    },
+    {
+      question: '57. ATC được tính bằng?',
+      options: ['TC/Q', 'VC/Q', 'FC/Q', 'TR/Q'],
+      correct: 0,
+      explain: 'ATC = TC/Q.'
+    },
+    {
+      question: '58. Khi sản lượng tăng, AFC sẽ?',
+      options: ['Tăng', 'Giảm', 'Không đổi', 'Bằng 0'],
+      correct: 1,
+      explain: 'AFC giảm khi Q tăng.'
+    },
+    {
+      question: '59. Đường MC cắt AVC tại?',
+      options: ['Max AVC', 'Min AVC', 'Không liên quan', 'Trung bình'],
+      correct: 1,
+      explain: 'MC cắt AVC tại điểm thấp nhất.'
+    },
+    {
+      question: '60. Khi doanh thu cận biên MR > MC thì doanh nghiệp nên?',
+      options: ['Giảm Q', 'Tăng Q', 'Giữ nguyên', 'Đóng cửa'],
+      correct: 1,
+      explain: 'MR > MC → tăng sản lượng.'
     }
+
   ];
 
   const essayData = [
@@ -536,8 +600,11 @@
       }
     });
 
+    const wrong = quizData.length - score - quizData.filter((q, index) => !document.querySelector(`input[name="quiz-${index}"]:checked`)).length;
+    const unanswered = quizData.filter((q, index) => !document.querySelector(`input[name="quiz-${index}"]:checked`)).length;
     scoreBox.textContent = `Kết quả: ${score}/${quizData.length} câu đúng.`;
     scoreBox.className = 'score';
+    document.getElementById('extraStats').textContent = `Đúng: ${score} • Sai: ${wrong} • Chưa làm: ${unanswered}`;
   }
 
   function resetAll(){
@@ -550,6 +617,7 @@
     });
     scoreBox.textContent = 'Chưa chấm bài.';
     scoreBox.className = 'score note';
+    document.getElementById('extraStats').textContent = `Đúng: 0 • Sai: 0 • Chưa làm: ${quizData.length}`;
   }
 
   function escapeHtml(str){
