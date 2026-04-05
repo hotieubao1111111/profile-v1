@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quiz Kinh tế vi mô | NGUYỄN HỮU BẢO CHÂU</title>
+<style>
+  :root{
+    --bg:#05070d;
+    --card:rgba(255,255,255,.08);
+    --line:rgba(255,255,255,.14);
+    --text:#fff;
+    --sub:rgba(255,255,255,.72);
+    --ok:#98ffb0;
+    --bad:#ff9aa8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:Inter,system-ui,sans-serif;
+    background:radial-gradient(circle at top left, rgba(0,255,170,.12), transparent 18%), #05070d;
+    color:var(--text);
+    min-height:100vh;
+  }
+  .wrap{width:min(1080px,calc(100% - 24px));margin:24px auto;display:grid;gap:18px}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:24px;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    padding:20px;
+  }
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn,.back{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    padding:12px 16px;border-radius:16px;border:1px solid var(--line);
+    background:rgba(255,255,255,.08);color:#fff;text-decoration:none;font-weight:700;cursor:pointer;
+  }
+  .btn:hover,.back:hover{background:rgba(255,255,255,.14)}
+  h1{font-size:clamp(28px,5vw,42px);margin-bottom:8px}
+  p,.note{color:var(--sub);line-height:1.6}
+  .quiz-list{display:grid;gap:16px}
+  .quiz-item{padding:18px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid var(--line);display:grid;gap:12px}
+  .question{font-size:18px;font-weight:700;line-height:1.5}
+  .options{display:grid;gap:10px}
+  .option{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);cursor:pointer}
+  .option.correct{border-color:rgba(100,255,140,.55);background:rgba(100,255,140,.08)}
+  .option.wrong{border-color:rgba(255,110,110,.55);background:rgba(255,110,110,.08)}
+  .result{font-size:14px;color:var(--sub)}
+  .ok{color:var(--ok)}
+  .bad{color:var(--bad)}
+  .actions{display:flex;gap:10px;flex-wrap:wrap}
+  .score{font-size:16px;font-weight:700}
+  .pill{display:inline-block;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid var(--line);font-size:13px;color:var(--sub)}
+  .essay-list{display:grid;gap:16px}
+  .essay-item{padding:18px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid var(--line);display:grid;gap:12px}
+  .essay-textarea{width:100%;min-height:120px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#fff;resize:vertical;outline:none}
+  .essay-actions{display:flex;gap:10px;flex-wrap:wrap}
+  .essay-answer{padding:12px 14px;border-radius:14px;background:rgba(100,255,140,.08);border:1px solid rgba(100,255,140,.22);color:var(--sub);display:none;line-height:1.6}
+  .essay-answer.show{display:block}
+  .essay-title{font-size:18px;font-weight:700}
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card topbar">
+      <div>
+        <div style="font-weight:800;letter-spacing:.08em">QUIZ KINH TẾ VI MÔ</div>
+      </div>
+      <a class="back" href="./index.html">← Quay lại profile</a>
+    </section>
+
+    <section class="card">
+      <h1>Bộ đề trắc nghiệm ôn tập</h1>
+      <p>ÔN TẬP KINH TẾ VI MÔ. Mỗi câu chỉ có <b>1 đáp án đúng</b>.</p>
+      <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">
+        <span class="pill">Chọn 1 đáp án / câu</span>
+        <span class="pill">Chấm điểm tự động</span>
+        <span class="pill">Có giải thích ngắn</span>
+        <span class="pill">Có phần trả lời ngắn</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="actions" style="margin-bottom:14px">
+        <button class="btn" id="checkAllBtn">Chấm tất cả</button>
+        <button class="btn" id="resetBtn">Làm lại</button>
+      </div>
+      <div id="scoreBox" class="score note">Chưa chấm bài.</div>
+    </section>
+
+    <section class="card">
+      <div id="quizList" class="quiz-list"></div>
+    </section>
+
+    <section class="card">
+      <h1 style="font-size:clamp(24px,4vw,34px)">Phần trả lời ngắn</h1>
+      <p>Bên dưới là các câu tự luận ngắn và bài tính toán cơ bản. Người làm có thể tự viết lời giải, rồi bấm xem đáp án mẫu để đối chiếu.</p>
+    </section>
+
+    <section class="card">
+      <div id="essayList" class="essay-list"></div>
+    </section>
+  </main>
+
+<script>
+  const quizData = [
+    {
+      question: '1. Vấn đề khan hiếm tồn tại vì lý do nào?',
+      options: ['Chỉ tồn tại trong nền kinh tế hỗn hợp', 'Có thể loại trừ nếu ép giá thấp xuống', 'Nhu cầu con người không thể được thỏa mãn với các nguồn lực hiện có', 'Không phải điều nào ở trên'],
+      correct: 2,
+      explain: 'Nguồn lực hữu hạn, nhu cầu gần như vô hạn.'
+    },
+    {
+      question: '2. “Cận biên” trong kinh tế học có nghĩa là gì?',
+      options: ['Vừa đủ', 'Không quan trọng', 'Đường biên', 'Phần tăng thêm'],
+      correct: 3,
+      explain: 'Cận biên là phần tăng thêm khi có thêm 1 đơn vị.'
+    },
+    {
+      question: '3. Chi phí cơ hội của việc học đại học bao gồm khoản nào?',
+      options: ['Lương có thể kiếm được nếu không đi học', 'Không có khoản nào', 'Chỉ tiền ăn uống', 'Chỉ tiền sách'],
+      correct: 0,
+      explain: 'Chi phí cơ hội gồm cả thu nhập bị bỏ lỡ.'
+    },
+    {
+      question: '4. Nếu giá hàng hóa A tăng làm cầu của B dịch sang trái thì A và B là gì?',
+      options: ['Hàng bổ sung', 'Hàng thay thế', 'Hàng độc lập', 'Hàng công cộng'],
+      correct: 0,
+      explain: 'Giá A tăng làm cầu B giảm khi A và B là hàng bổ sung.'
+    },
+    {
+      question: '5. Điều nào không làm dịch chuyển đường cầu?',
+      options: ['Thu nhập thay đổi', 'Thị hiếu thay đổi', 'Giá của chính hàng hóa thay đổi', 'Giá hàng hóa liên quan thay đổi'],
+      correct: 2,
+      explain: 'Giá của chính hàng hóa chỉ gây di chuyển dọc theo đường cầu.'
+    },
+    {
+      question: '6. Chi phí đầu vào tăng sẽ làm gì với đường cung?',
+      options: ['Dịch sang phải', 'Dịch sang trái', 'Không đổi', 'Dốc hơn'],
+      correct: 1,
+      explain: 'Chi phí tăng làm cung giảm, đường cung dịch sang trái.'
+    },
+    {
+      question: '7. Trường hợp nào chắc chắn làm giá cân bằng tăng?',
+      options: ['Cầu tăng và cung giảm', 'Cầu giảm và cung tăng', 'Cầu tăng và cung tăng', 'Cầu giảm và cung giảm'],
+      correct: 0,
+      explain: 'Cầu tăng đẩy giá lên và cung giảm cũng đẩy giá lên.'
+    },
+    {
+      question: '8. Thu nhập tăng thì cầu của hàng hóa thông thường sẽ?',
+      options: ['Tăng', 'Giảm', 'Không đổi', 'Bằng 0'],
+      correct: 0,
+      explain: 'Hàng hóa thông thường có cầu tăng khi thu nhập tăng.'
+    },
+    {
+      question: '9. Thu nhập giảm mà cầu gạo chất lượng kém tăng thì đó là hàng hóa gì?',
+      options: ['Thiết yếu', 'Thông thường', 'Cấp thấp', 'Công cộng'],
+      correct: 2,
+      explain: 'Hàng cấp thấp có cầu tăng khi thu nhập giảm.'
+    },
+    {
+      question: '10. Giá trần thấp hơn giá cân bằng sẽ gây ra điều gì?',
+      options: ['Dư thừa', 'Thiếu hụt', 'Hòa vốn', 'Tăng cung'],
+      correct: 1,
+      explain: 'Giá trần ràng buộc thường gây thiếu hụt.'
+    },
+    {
+      question: '11. Giá sàn cao hơn giá cân bằng sẽ gây ra điều gì?',
+      options: ['Thiếu hụt', 'Dư thừa', 'Không ảnh hưởng', 'Lỗ kinh tế'],
+      correct: 1,
+      explain: 'Giá sàn ràng buộc thường gây dư thừa.'
+    },
+    {
+      question: '12. Hệ số co giãn chéo âm cho biết hai hàng hóa là?',
+      options: ['Thay thế', 'Bổ sung', 'Độc lập', 'Xa xỉ'],
+      correct: 1,
+      explain: 'Hệ số co giãn chéo âm là hàng bổ sung.'
+    },
+    {
+      question: '13. Co giãn cầu theo giá lớn hơn 1 nghĩa là?',
+      options: ['Kém co giãn', 'Đơn vị', 'Co giãn nhiều', 'Hoàn toàn không co giãn'],
+      correct: 2,
+      explain: 'Lớn hơn 1 nghĩa là cầu co giãn nhiều.'
+    },
+    {
+      question: '14. Nếu cầu co giãn đơn vị, giá giảm 1% thì doanh thu sẽ?',
+      options: ['Tăng', 'Giảm', 'Không đổi', 'Không xác định'],
+      correct: 2,
+      explain: 'Cầu co giãn đơn vị thì tổng doanh thu không đổi khi giá thay đổi nhỏ.'
+    },
+    {
+      question: '15. Lợi ích biên là gì?',
+      options: ['Lợi ích lớn nhất', 'Lợi ích tăng thêm khi dùng thêm 1 đơn vị', 'Tổng lợi ích', 'Lợi ích trung bình'],
+      correct: 1,
+      explain: 'Lợi ích biên là phần lợi ích tăng thêm.'
+    },
+    {
+      question: '16. Tỷ lệ thay thế biên MRSxy được viết là?',
+      options: ['MUy/MUx', 'MUx/MUy', 'Px/Py', 'Py/Px'],
+      correct: 1,
+      explain: 'MRSxy = MUx/MUy.'
+    },
+    {
+      question: '17. Độ dốc của đường ngân sách phụ thuộc chủ yếu vào?',
+      options: ['Thu nhập', 'Sở thích', 'Tỷ lệ giá của hai hàng hóa', 'Tổng lợi ích'],
+      correct: 2,
+      explain: 'Độ dốc đường ngân sách bằng -Px/Py.'
+    },
+    {
+      question: '18. Hàng hóa thay thế hoàn toàn có đường bàng quan dạng gì?',
+      options: ['Lồi về gốc', 'Thẳng đứng', 'Tuyến tính', 'Chữ U'],
+      correct: 2,
+      explain: 'Hàng hóa thay thế hoàn toàn có đường bàng quan tuyến tính.'
+    },
+    {
+      question: '19. Điều kiện tối ưu của người tiêu dùng nội tại là?',
+      options: ['MUx = MUy', 'MRS = tỷ lệ giá', 'Px = Py', 'TU lớn nhất'],
+      correct: 1,
+      explain: 'Tại điểm tối ưu: MRS = Px/Py.'
+    },
+    {
+      question: '20. Lợi nhuận kinh tế bằng?',
+      options: ['Doanh thu trừ chi phí kế toán', 'Doanh thu trừ toàn bộ chi phí cơ hội', 'Doanh thu trừ chi phí biến đổi', 'Doanh thu trừ chi phí cố định'],
+      correct: 1,
+      explain: 'Lợi nhuận kinh tế tính cả chi phí hiện và chi phí ẩn.'
+    },
+    {
+      question: '21. MC là gì?',
+      options: ['Chi phí trung bình', 'Chi phí biên', 'Chi phí cố định', 'Chi phí ẩn'],
+      correct: 1,
+      explain: 'MC là chi phí tăng thêm khi sản xuất thêm 1 đơn vị.'
+    },
+    {
+      question: '22. AFC bằng công thức nào?',
+      options: ['ATC - AVC', 'MC - AVC', 'TC - VC', 'VC/Q'],
+      correct: 0,
+      explain: 'AFC = ATC - AVC.'
+    },
+    {
+      question: '23. Khi MC nhỏ hơn AC thì AC đang?',
+      options: ['Tăng', 'Giảm', 'Không đổi', 'Đạt cực đại'],
+      correct: 1,
+      explain: 'MC kéo AC xuống khi MC < AC.'
+    },
+    {
+      question: '24. Khi MC cắt AC thì AC đang ở?',
+      options: ['Điểm cực đại', 'Điểm cực tiểu', 'Điểm đóng cửa', 'Điểm hòa vốn'],
+      correct: 1,
+      explain: 'MC cắt AC tại điểm thấp nhất của AC.'
+    },
+    {
+      question: '25. Điều kiện tối đa hóa lợi nhuận của doanh nghiệp là?',
+      options: ['P = AC', 'TR = TC', 'MR = MC', 'P = AVC'],
+      correct: 2,
+      explain: 'Quy tắc chuẩn là MR = MC.'
+    },
+    {
+      question: '26. Trong cạnh tranh hoàn hảo, đường cầu của doanh nghiệp là?',
+      options: ['Dốc xuống', 'Nằm ngang', 'Thẳng đứng', 'Cong lồi'],
+      correct: 1,
+      explain: 'Doanh nghiệp là người chấp nhận giá.'
+    },
+    {
+      question: '27. Trong cạnh tranh hoàn hảo, cung ngắn hạn của doanh nghiệp là phần đường nào?',
+      options: ['AC phía trên ATCmin', 'MC phía trên AVCmin', 'AVC phía trên MC', 'ATC phía trên MC'],
+      correct: 1,
+      explain: 'Đường cung ngắn hạn là phần MC nằm trên AVCmin.'
+    },
+    {
+      question: '28. Nếu P < AVCmin thì doanh nghiệp cạnh tranh hoàn hảo nên?',
+      options: ['Tiếp tục sản xuất', 'Đóng cửa tạm thời', 'Tăng sản lượng', 'Giảm giá'],
+      correct: 1,
+      explain: 'Không đủ bù chi phí biến đổi thì nên đóng cửa tạm thời.'
+    },
+    {
+      question: '29. Trong dài hạn của cạnh tranh hoàn hảo, lợi nhuận kinh tế bằng?',
+      options: ['Dương', 'Âm', 'Bằng 0', 'Không xác định'],
+      correct: 2,
+      explain: 'Tự do gia nhập/rút lui làm lợi nhuận kinh tế về 0.'
+    },
+    {
+      question: '30. Độc quyền tối đa hóa lợi nhuận tại điểm nào?',
+      options: ['P = MC', 'MR = MC', 'P = AC', 'TR lớn nhất'],
+      correct: 1,
+      explain: 'Độc quyền vẫn tối đa hóa lợi nhuận tại MR = MC.'
+    },
+    {
+      question: '31. Trong độc quyền, mối quan hệ giữa P và MR là?',
+      options: ['P = MR', 'P > MR', 'P < MR', 'Không liên hệ'],
+      correct: 1,
+      explain: 'Do đường cầu dốc xuống nên MR nhỏ hơn P.'
+    },
+    {
+      question: '32. So với cạnh tranh hoàn hảo, doanh nghiệp độc quyền thường có?',
+      options: ['Giá thấp hơn, lượng cao hơn', 'Giá cao hơn, lượng thấp hơn', 'Giá và lượng bằng nhau', 'Giá thấp hơn, lượng thấp hơn'],
+      correct: 1,
+      explain: 'Độc quyền bán giá cao hơn và sản lượng thấp hơn.'
+    },
+    {
+      question: '33. Hệ số co giãn chéo dương cho biết hai hàng hóa là?',
+      options: ['Bổ sung', 'Thay thế', 'Công cộng', 'Thứ cấp'],
+      correct: 1,
+      explain: 'Dương nghĩa là hàng hóa thay thế.'
+    },
+    {
+      question: '34. Hàng hóa xa xỉ thường có độ co giãn theo thu nhập như thế nào?',
+      options: ['Nhỏ hơn 0', 'Bằng 0', 'Lớn hơn 1', 'Bằng 1'],
+      correct: 2,
+      explain: 'Hàng xa xỉ thường có co giãn theo thu nhập lớn hơn 1.'
+    },
+    {
+      question: '35. Nếu Ed = -2, giá tăng 2% thì lượng cầu sẽ?',
+      options: ['Tăng 4%', 'Giảm 4%', 'Giảm 2%', 'Không đổi'],
+      correct: 1,
+      explain: 'Ed = %ΔQ / %ΔP nên %ΔQ = -4%.'
+    },
+    {
+      question: '36. Nếu cầu co giãn nhiều, giảm giá sẽ làm doanh thu?',
+      options: ['Tăng', 'Giảm', 'Không đổi', 'Bằng 0'],
+      correct: 0,
+      explain: 'Khi cầu co giãn, giảm giá làm tổng doanh thu tăng.'
+    },
+    {
+      question: '37. Qd = 80 - 10P, Qs = -70 + 20P. Giá cân bằng là?',
+      options: ['3', '5', '7', '10'],
+      correct: 1,
+      explain: '80 - 10P = -70 + 20P => P = 5.'
+    },
+    {
+      question: '38. Với Qd = 80 - 10P, Qs = -70 + 20P thì lượng cân bằng là?',
+      options: ['20', '30', '40', '50'],
+      correct: 1,
+      explain: 'Thay P = 5 vào hàm cầu/cung được Q = 30.'
+    },
+    {
+      question: '39. Với P = 12 - 0,4Q và TC = 0,6Q² + 4Q + 5, sản lượng tối ưu là?',
+      options: ['3', '4', '5', '6'],
+      correct: 1,
+      explain: 'MR = 12 - 0,8Q, MC = 1,2Q + 4, giải ra Q = 4.'
+    },
+    {
+      question: '40. Với bài trên, giá bán tối ưu là?',
+      options: ['8,4', '9,6', '10,4', '11,2'],
+      correct: 2,
+      explain: 'Thay Q = 4 vào P = 12 - 0,4Q được P = 10,4.'
+    },
+    {
+      question: '41. Nếu P > ATC thì doanh nghiệp đang?',
+      options: ['Lỗ', 'Hòa vốn', 'Có lợi nhuận kinh tế', 'Đóng cửa'],
+      correct: 2,
+      explain: 'Giá cao hơn chi phí trung bình nên có lợi nhuận kinh tế.'
+    },
+    {
+      question: '42. Nếu P = ATC thì doanh nghiệp đang?',
+      options: ['Lỗ', 'Hòa vốn', 'Lợi nhuận tối đa', 'Ngừng sản xuất'],
+      correct: 1,
+      explain: 'P = ATC là điểm hòa vốn.'
+    },
+    {
+      question: '43. Nếu P < ATC nhưng P > AVC thì doanh nghiệp nên?',
+      options: ['Ngừng sản xuất ngay', 'Tiếp tục sản xuất trong ngắn hạn', 'Tăng giá', 'Rời ngành ngay'],
+      correct: 1,
+      explain: 'Vẫn sản xuất để bù một phần chi phí cố định.'
+    },
+    {
+      question: '44. Khi công nghệ cải tiến, với các yếu tố khác không đổi, đường cung sẽ?',
+      options: ['Dịch trái', 'Dịch phải', 'Không đổi', 'Dốc hơn'],
+      correct: 1,
+      explain: 'Công nghệ tốt hơn làm cung tăng, đường cung dịch phải.'
+    },
+    {
+      question: '45. Trong ngắn hạn, gánh nặng thuế thường rơi nhiều hơn vào phía nào?',
+      options: ['Phía co giãn nhiều hơn', 'Phía kém co giãn hơn', 'Luôn là người bán', 'Luôn là người mua'],
+      correct: 1,
+      explain: 'Gánh nặng thuế nghiêng về phía kém co giãn hơn.'
+    },
+    {
+      question: '46. Đường cầu co giãn hoàn toàn có dạng?',
+      options: ['Song song trục tung', 'Nằm ngang', 'Dốc xuống', 'Cong lồi'],
+      correct: 1,
+      explain: 'Co giãn hoàn toàn là đường nằm ngang.'
+    },
+    {
+      question: '47. Một nền kinh tế có thất nghiệp sẽ sản xuất ở đâu so với PPF?',
+      options: ['Trên PPF', 'Ngoài PPF', 'Bên trong PPF', 'Đúng trên trục tung'],
+      correct: 2,
+      explain: 'Thất nghiệp hay lãng phí nguồn lực khiến nền kinh tế nằm trong PPF.'
+    },
+    {
+      question: '48. PPF dùng để minh họa điều gì tốt nhất?',
+      options: ['Quy luật cung cầu', 'Sự khan hiếm và đánh đổi', 'Chính sách tiền tệ', 'Độ co giãn thu nhập'],
+      correct: 1,
+      explain: 'PPF minh họa khan hiếm, đánh đổi và chi phí cơ hội.'
+    },
+    {
+      question: '49. Hàng hóa công cộng thường có đặc điểm nào?',
+      options: ['Loại trừ được hoàn toàn', 'Cạnh tranh trong tiêu dùng cao', 'Không loại trừ và không cạnh tranh', 'Luôn do tư nhân cung cấp'],
+      correct: 2,
+      explain: 'Hàng hóa công cộng có tính không loại trừ và không cạnh tranh trong tiêu dùng.'
+    },
+    {
+      question: '50. Trong mô hình cung cầu, nếu cả cung và cầu cùng tăng thì?',
+      options: ['Sản lượng chắc chắn tăng', 'Giá chắc chắn tăng', 'Giá chắc chắn giảm', 'Sản lượng chắc chắn giảm'],
+      correct: 0,
+      explain: 'Cả cung và cầu tăng đều làm sản lượng cân bằng tăng; giá thì không chắc chắn.'
+    }
+  ];
+
+  const essayData = [
+    {
+      title: 'TL1. Chi phí cơ hội mở quán cà phê',
+      prompt: 'Thành đầu tư 250 triệu mở quán cà phê. Lãi suất ngân hàng 0,8%/tháng. Nếu đi làm thuê thì thu nhập 4 triệu/tháng. Lợi nhuận quán là 5 triệu/tháng. Hãy xác định chi phí cơ hội và nhận xét quyết định mở quán.',
+      answer: 'Tiền lãi ngân hàng mỗi tháng = 250 triệu × 0,8% = 2 triệu đồng. Thu nhập bị bỏ lỡ khi không đi làm thuê = 4 triệu đồng/tháng. Chi phí cơ hội = 6 triệu đồng/tháng. Vì lợi nhuận quán 5 triệu < 6 triệu nên xét theo kinh tế học, mở quán không tốt hơn đi làm thuê.'
+    },
+    {
+      title: 'TL2. Giá và lượng cân bằng',
+      prompt: 'Cho QD = 80 - 10P và QS = -70 + 20P. Tìm giá cân bằng và lượng cân bằng.',
+      answer: 'Đặt QD = QS: 80 - 10P = -70 + 20P => 150 = 30P => P = 5. Khi đó Q = 80 - 10×5 = 30. Vậy P* = 5, Q* = 30.'
+    },
+    {
+      title: 'TL3. Thuế làm thay đổi cân bằng',
+      prompt: 'Với QD = 80 - 10P và QS = -70 + 20P, nếu Chính phủ đánh thuế t = 3 trên mỗi đơn vị hàng hóa bán ra thì giá và lượng cân bằng mới thay đổi thế nào?',
+      answer: 'Gọi Pb là giá người mua trả, Ps là giá người bán nhận, Pb = Ps + 3. Cung mới: Qs = -70 + 20(Pb - 3) = 20Pb - 130. Cân bằng mới: 80 - 10Pb = 20Pb - 130 => Pb = 7. Ps = 4. Q mới = 10.'
+    },
+    {
+      title: 'TL4. Tối đa hóa lợi nhuận',
+      prompt: 'Cho P = 12 - 0,4Q và TC = 0,6Q² + 4Q + 5. Tìm sản lượng tối ưu, giá bán và lợi nhuận cực đại.',
+      answer: 'TR = 12Q - 0,4Q² nên MR = 12 - 0,8Q. MC = 1,2Q + 4. Giải MR = MC được Q = 4. Giá P = 10,4. TR = 41,6. TC = 30,6. Lợi nhuận = 11.'
+    },
+    {
+      title: 'TL5. Doanh nghiệp cạnh tranh hoàn hảo',
+      prompt: 'Cho TC = q² + q + 21. Hãy viết FC, AVC, ATC, MC và cho biết khi P = 29 thì doanh nghiệp nên sản xuất bao nhiêu để tối đa hóa lợi nhuận.',
+      answer: 'FC = 21. AVC = q + 1. ATC = q + 1 + 21/q. MC = 2q + 1. Với P = MC: 29 = 2q + 1 => q = 14.'
+    },
+    {
+      title: 'TL6. Giải thích khan hiếm',
+      prompt: 'Vì sao vấn đề khan hiếm là vấn đề trung tâm của kinh tế học?',
+      answer: 'Vì nguồn lực có hạn trong khi nhu cầu của con người rất lớn. Do đó mọi cá nhân và xã hội đều phải lựa chọn cách phân bổ nguồn lực hiệu quả.'
+    },
+    {
+      title: 'TL7. Phân biệt hàng hóa thông thường và hàng hóa cấp thấp',
+      prompt: 'Hãy phân biệt ngắn gọn hàng hóa thông thường và hàng hóa cấp thấp.',
+      answer: 'Hàng hóa thông thường: thu nhập tăng thì cầu tăng. Hàng hóa cấp thấp: thu nhập tăng thì cầu giảm, thu nhập giảm thì cầu tăng.'
+    },
+    {
+      title: 'TL8. Giải thích giá trần và giá sàn',
+      prompt: 'Nêu khái niệm giá trần và giá sàn, cùng hậu quả thường gặp của chúng.',
+      answer: 'Giá trần là mức giá tối đa, thường thấp hơn giá cân bằng nên gây thiếu hụt. Giá sàn là mức giá tối thiểu, thường cao hơn giá cân bằng nên gây dư thừa.'
+    },
+    {
+      title: 'TL9. Vì sao đường cầu của doanh nghiệp cạnh tranh hoàn hảo nằm ngang?',
+      prompt: 'Giải thích ngắn gọn vì sao đường cầu của doanh nghiệp cạnh tranh hoàn hảo là đường nằm ngang.',
+      answer: 'Vì doanh nghiệp là người chấp nhận giá, không thể làm thay đổi giá thị trường. Do đó doanh nghiệp có thể bán mọi lượng ở mức giá đã cho.'
+    },
+    {
+      title: 'TL10. So sánh độc quyền và cạnh tranh hoàn hảo',
+      prompt: 'So sánh ngắn gọn mức giá và sản lượng của thị trường độc quyền với cạnh tranh hoàn hảo.',
+      answer: 'Độc quyền thường đặt giá cao hơn và bán sản lượng thấp hơn so với cạnh tranh hoàn hảo. Vì vậy thị trường độc quyền kém hiệu quả hơn về mặt xã hội.'
+    }
+  ];
+
+  const quizList = document.getElementById('quizList');
+  const essayList = document.getElementById('essayList');
+  const scoreBox = document.getElementById('scoreBox');
+  const checkAllBtn = document.getElementById('checkAllBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  function renderQuiz(){
+
+    quizList.innerHTML = '';
+    quizData.forEach((q, index) => {
+      const item = document.createElement('article');
+      item.className = 'quiz-item';
+      item.dataset.index = index;
+      item.innerHTML = `
+        <div class="question">${q.question}</div>
+        <div class="options">
+          ${q.options.map((opt, i) => `
+            <label class="option">
+              <input type="radio" name="quiz-${index}" value="${i}">
+              <span>${String.fromCharCode(65 + i)}. ${escapeHtml(opt)}</span>
+            </label>
+          `).join('')}
+        </div>
+        <div class="result" id="result-${index}">Chưa chấm.</div>
+      `;
+      quizList.appendChild(item);
+    });
+  }
+
+  function renderEssay(){
+    essayList.innerHTML = '';
+    essayData.forEach((item, index) => {
+      const block = document.createElement('article');
+      block.className = 'essay-item';
+      block.innerHTML = `
+        <div class="essay-title">${item.title}</div>
+        <div class="question">${item.prompt}</div>
+        <textarea class="essay-textarea" placeholder="Nhập câu trả lời của bạn vào đây..."></textarea>
+        <div class="essay-actions">
+          <button class="btn" type="button" onclick="toggleEssayAnswer(${index})">Xem đáp án mẫu</button>
+          <button class="btn" type="button" onclick="clearEssay(${index})">Xóa phần trả lời</button>
+        </div>
+        <div class="essay-answer" id="essay-answer-${index}">${item.answer}</div>
+      `;
+      essayList.appendChild(block);
+    });
+  }
+
+  function checkAll(){
+
+    let score = 0;
+
+    quizData.forEach((q, index) => {
+      const selected = document.querySelector(`input[name="quiz-${index}"]:checked`);
+      const result = document.getElementById(`result-${index}`);
+      const optionEls = [...quizList.querySelectorAll(`[data-index="${index}"] .option`)];
+
+      optionEls.forEach((el, i) => {
+        el.classList.remove('correct','wrong');
+        if(i === q.correct) el.classList.add('correct');
+        if(selected && Number(selected.value) === i && i !== q.correct) el.classList.add('wrong');
+      });
+
+      if(selected && Number(selected.value) === q.correct){
+        score++;
+        result.textContent = 'Đúng. ' + q.explain;
+        result.className = 'result ok';
+      } else if(selected) {
+        result.textContent = 'Sai. ' + q.explain;
+        result.className = 'result bad';
+      } else {
+        result.textContent = 'Bạn chưa chọn đáp án. ' + q.explain;
+        result.className = 'result bad';
+      }
+    });
+
+    scoreBox.textContent = `Kết quả: ${score}/${quizData.length} câu đúng.`;
+    scoreBox.className = 'score';
+  }
+
+  function resetAll(){
+
+    document.querySelectorAll('#quizList input').forEach(el => el.checked = false);
+    document.querySelectorAll('.option').forEach(el => el.classList.remove('correct','wrong'));
+    document.querySelectorAll('.result').forEach(el => {
+      el.textContent = 'Chưa chấm.';
+      el.className = 'result';
+    });
+    scoreBox.textContent = 'Chưa chấm bài.';
+    scoreBox.className = 'score note';
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  window.toggleEssayAnswer = function(index){
+    const el = document.getElementById(`essay-answer-${index}`);
+    el.classList.toggle('show');
+  }
+
+  window.clearEssay = function(index){
+    const areas = essayList.querySelectorAll('.essay-textarea');
+    if(areas[index]) areas[index].value = '';
+  }
+
+  checkAllBtn.addEventListener('click', checkAll);
+  resetBtn.addEventListener('click', resetAll);
+  renderQuiz();
+  renderEssay();
+</script>
+</body>
+</html>
