@@ -62,6 +62,14 @@
 </style>
 </head>
 <body>
+  <div id="lockScreen" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:9999;">
+    <div style="background:rgba(255,255,255,0.08);padding:24px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);width:300px;text-align:center;">
+      <h2 style="margin-bottom:12px">🔐 Nhập mật khẩu</h2>
+      <input id="quizPasswordInput" type="password" placeholder="Nhập mật khẩu" style="width:100%;padding:10px;border-radius:10px;border:none;margin-bottom:10px;">
+      <button id="unlockQuizBtn" style="width:100%;padding:10px;border-radius:10px;border:none;background:#00ffaa;color:#000;font-weight:bold;cursor:pointer">Mở quiz</button>
+      <div id="lockError" style="margin-top:10px;color:red"></div>
+    </div>
+  </div>
   <main class="wrap">
     <section class="card topbar">
       <div>
@@ -105,6 +113,8 @@
   </main>
 
 <script>
+  const QUIZ_PASSWORD = '123456';
+
   const quizData = [
     {
       question: '1. Vấn đề khan hiếm tồn tại vì lý do nào?',
@@ -524,6 +534,10 @@
     }
   ];
 
+  const lockScreen = document.getElementById('lockScreen');
+  const quizPasswordInput = document.getElementById('quizPasswordInput');
+  const unlockQuizBtn = document.getElementById('unlockQuizBtn');
+  const lockError = document.getElementById('lockError');
   const quizList = document.getElementById('quizList');
   const essayList = document.getElementById('essayList');
   const scoreBox = document.getElementById('scoreBox');
@@ -637,6 +651,25 @@
   window.clearEssay = function(index){
     const areas = essayList.querySelectorAll('.essay-textarea');
     if(areas[index]) areas[index].value = '';
+  }
+
+  unlockQuizBtn?.addEventListener('click', () => {
+    const value = quizPasswordInput.value.trim();
+    if(value === QUIZ_PASSWORD){
+      lockScreen.style.display = 'none';
+      lockError.textContent = '';
+      sessionStorage.setItem('quiz_unlocked', '1');
+    }else{
+      lockError.textContent = 'Sai mật khẩu rồi.';
+    }
+  });
+
+  quizPasswordInput?.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') unlockQuizBtn.click();
+  });
+
+  if(sessionStorage.getItem('quiz_unlocked') === '1' && lockScreen){
+    lockScreen.style.display = 'none';
   }
 
   checkAllBtn.addEventListener('click', checkAll);
